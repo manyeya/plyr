@@ -6,22 +6,9 @@ interface TrackInfoProps {
     playing: boolean;
 }
 
-/** Deterministic solid color from a track name — no gradients */
-function solidColor(name: string): string {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const hue = ((hash >>> 0) % 360);
-    return `hsl(${hue}, 40%, 28%)`;
-}
 
 export const TrackInfo: React.FC<TrackInfoProps> = ({ track, playing }) => {
-    const bg = track
-        ? track.artwork
-            ? undefined                   // image handles the background
-            : solidColor(track.name)
-        : "hsl(230, 25%, 14%)";           // empty state
+    const bg = track?.artwork ? undefined : "var(--surface)";
 
     const showPreview = track?.type !== "video"; // hide preview for video types
 
@@ -42,20 +29,36 @@ export const TrackInfo: React.FC<TrackInfoProps> = ({ track, playing }) => {
                             draggable={false}
                         />
                     ) : track ? (
-                        <>
-                            <div className="album-art__icon">
-                                {track.type === "video" ? "🎬" : "🎵"}
-                            </div>
-                            {playing && (
-                                <div className="equalizer" aria-hidden="true">
-                                    {[1, 2, 3, 4].map((i) => (
-                                        <div key={i} className="equalizer__bar" style={{ animationDelay: `${i * 0.1}s` }} />
-                                    ))}
-                                </div>
+                        <div className="album-art__icon">
+                            {track.type === "video" ? (
+                                // Film icon
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                                    <line x1="7" y1="2" x2="7" y2="22" />
+                                    <line x1="17" y1="2" x2="17" y2="22" />
+                                    <line x1="2" y1="12" x2="22" y2="12" />
+                                    <line x1="2" y1="7" x2="7" y2="7" />
+                                    <line x1="2" y1="17" x2="7" y2="17" />
+                                    <line x1="17" y1="17" x2="22" y2="17" />
+                                    <line x1="17" y1="7" x2="22" y2="7" />
+                                </svg>
+                            ) : (
+                                // Music note icon
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 18V5l12-2v13" />
+                                    <circle cx="6" cy="18" r="3" />
+                                    <circle cx="18" cy="16" r="3" />
+                                </svg>
                             )}
-                        </>
+                        </div>
                     ) : (
-                        <div className="album-art__icon album-art__icon--empty">♫</div>
+                        <div className="album-art__icon album-art__icon--empty">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 18V5l12-2v13" />
+                                <circle cx="6" cy="18" r="3" />
+                                <circle cx="18" cy="16" r="3" />
+                            </svg>
+                        </div>
                     )}
                 </div>
             )}

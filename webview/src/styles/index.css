@@ -194,6 +194,15 @@ body.vscode-high-contrast .playlist {
 
 .album-art__icon {
   font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.album-art__icon svg {
+  width: 48%;
+  height: 48%;
+  opacity: 0.7;
 }
 
 .album-art__img {
@@ -974,29 +983,17 @@ body.vscode-high-contrast .playlist {
     font-size: 18px;
     margin-bottom: 4px;
     white-space: nowrap;
-    display: inline-block;
-    padding-left: 100%;
-    animation: marquee 12s linear infinite;
-  }
-
-  .track-meta__title:hover {
-    animation-play-state: paused;
-  }
-
-  @keyframes marquee {
-    0% {
-      transform: translate(0, 0);
-    }
-
-    100% {
-      transform: translate(-100%, 0);
-    }
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .track-meta__artist {
     font-size: 14px;
     color: var(--text-dim);
     margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .track-meta__type {
