@@ -2,7 +2,6 @@ import React, { useEffect, useCallback } from "react";
 import { usePlayer } from "./hooks/usePlayer";
 import { TrackInfo } from "./components/TrackInfo";
 import { Controls } from "./components/Controls";
-import { Visualizer } from "./components/Visualizer";
 import { Playlist } from "./components/Playlist";
 import { postToExtension } from "./vscode";
 
@@ -117,15 +116,6 @@ export const App: React.FC = () => {
                     <div className="player-card">
                         <TrackInfo track={state.currentTrack} playing={state.playing} />
 
-                        {videoVisible ? (
-                            <div className="video-placeholder" aria-hidden="true" />
-                        ) : (
-                            <Visualizer
-                                audioRef={audioRef as React.RefObject<HTMLAudioElement>}
-                                playing={state.playing}
-                                isAudio={isAudio}
-                            />
-                        )}
 
                         <Controls
                             playing={state.playing}
