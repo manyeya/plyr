@@ -128,7 +128,8 @@ body.vscode-high-contrast .playlist {
 }
 
 .app__panel--left {
-  flex: 0 0 380px;
+  flex: 1;
+  min-width: 0;
 }
 
 .app__panel--right {
@@ -923,5 +924,133 @@ body.vscode-high-contrast .playlist {
 
   .playlist__item-name {
     font-size: 12px;
+  }
+}
+
+/* ─── Lager device / Column layout (min-width: 561px) ───── */
+@media (min-width: 561px) {
+  .app__main {
+    flex-direction: row;
+  }
+
+  .app__panel--left,
+  .app__panel--right {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .player-card {
+    justify-content: center;
+    align-items: center;
+  }
+
+  .track-info {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .album-art {
+    width: 220px;
+    height: 220px;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .album-art__icon,
+  .album-art__icon--empty {
+    font-size: 64px;
+  }
+
+  .track-meta {
+    width: 100%;
+    max-width: 320px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .track-meta__title {
+    font-size: 18px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    display: inline-block;
+    padding-left: 100%;
+    animation: marquee 12s linear infinite;
+  }
+
+  .track-meta__title:hover {
+    animation-play-state: paused;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translate(0, 0);
+    }
+
+    100% {
+      transform: translate(-100%, 0);
+    }
+  }
+
+  .track-meta__artist {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+  }
+
+  .track-meta__type {
+    font-size: 12px;
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .seek-bar {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+
+  .controls__row {
+    flex-direction: column;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .controls__center,
+  .controls__side {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .player-card .ctrl-btn--play {
+    width: 56px;
+    height: 56px;
+  }
+
+  .player-card .ctrl-btn--play svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .player-card .ctrl-btn:not(.ctrl-btn--play) {
+    width: 42px;
+    height: 42px;
+  }
+
+  .player-card .ctrl-btn:not(.ctrl-btn--play) svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .volume-slider {
+    width: 100px;
   }
 }

@@ -23,38 +23,42 @@ export const TrackInfo: React.FC<TrackInfoProps> = ({ track, playing }) => {
             : solidColor(track.name)
         : "hsl(230, 25%, 14%)";           // empty state
 
+    const showPreview = track?.type !== "video"; // hide preview for video types
+
     return (
         <div className="track-info">
-            <div
-                className={`album-art ${playing ? "album-art--playing" : ""}`}
-                style={{ background: bg }}
-                aria-label="Album art"
-            >
-                {track?.artwork ? (
-                    // Actual embedded cover art
-                    <img
-                        src={track.artwork}
-                        alt="Album art"
-                        className="album-art__img"
-                        draggable={false}
-                    />
-                ) : track ? (
-                    <>
-                        <div className="album-art__icon">
-                            {track.type === "video" ? "🎬" : "🎵"}
-                        </div>
-                        {playing && (
-                            <div className="equalizer" aria-hidden="true">
-                                {[1, 2, 3, 4].map((i) => (
-                                    <div key={i} className="equalizer__bar" style={{ animationDelay: `${i * 0.1}s` }} />
-                                ))}
+            {showPreview && (
+                <div
+                    className={`album-art ${playing ? "album-art--playing" : ""}`}
+                    style={{ background: bg }}
+                    aria-label="Album art"
+                >
+                    {track?.artwork ? (
+                        // Actual embedded cover art
+                        <img
+                            src={track.artwork}
+                            alt="Album art"
+                            className="album-art__img"
+                            draggable={false}
+                        />
+                    ) : track ? (
+                        <>
+                            <div className="album-art__icon">
+                                {track.type === "video" ? "🎬" : "🎵"}
                             </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="album-art__icon album-art__icon--empty">♫</div>
-                )}
-            </div>
+                            {playing && (
+                                <div className="equalizer" aria-hidden="true">
+                                    {[1, 2, 3, 4].map((i) => (
+                                        <div key={i} className="equalizer__bar" style={{ animationDelay: `${i * 0.1}s` }} />
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="album-art__icon album-art__icon--empty">♫</div>
+                    )}
+                </div>
+            )}
 
             <div className="track-meta">
                 <p className="track-meta__title" title={track?.title ?? track?.name ?? "No track loaded"}>
