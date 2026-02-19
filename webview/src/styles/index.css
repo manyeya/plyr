@@ -7,7 +7,9 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-shadow: none !important;
 }
+
 
 /*
   VS Code injects its theme colors as CSS variables into every webview.
@@ -185,7 +187,7 @@ body.vscode-high-contrast .playlist {
   }
 
   50% {
-    box-shadow: 0 8px 48px rgba(124, 58, 237, 0.5), 0 0 0 2px #7c3aed inset;
+    box-shadow: 0 8px 48px var(--accent-glow), 0 0 0 2px var(--accent2) inset;
   }
 }
 
@@ -439,7 +441,7 @@ body.vscode-high-contrast .playlist {
 }
 
 .ctrl-btn--play:hover {
-  box-shadow: 0 6px 30px rgba(124, 58, 237, 0.5);
+  box-shadow: 0 6px 30px var(--accent-glow);
   transform: scale(1.08);
 }
 
