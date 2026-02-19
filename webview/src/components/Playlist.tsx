@@ -59,7 +59,7 @@ export const Playlist: React.FC<PlaylistProps> = ({
         >
             <div className="playlist__header">
                 <h3 className="playlist__title">
-                    Queue <span className="playlist__count">{tracks.length}</span>
+                    Playlist <span className="playlist__count">{tracks.length}</span>
                 </h3>
                 <button className="ctrl-btn ctrl-btn--sm" onClick={onAddFiles} title="Add files">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
