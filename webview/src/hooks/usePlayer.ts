@@ -81,6 +81,10 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
             setState((prev) => ({ ...prev, currentTrack: track, loading: true, playing: false, currentTime: 0 }));
             // Media element picks up the new src via useEffect
             setTimeout(() => {
+                // Ensure the other media element stops playing when switching types
+                if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+                if (videoRef.current && !videoRef.current.paused) videoRef.current.pause();
+
                 const media = track.type === "video" ? videoRef.current : audioRef.current;
                 if (media) {
                     media.src = track.url;

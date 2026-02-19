@@ -103,16 +103,16 @@ export const App: React.FC = () => {
 
     return (
         <div className="app">
-            {/* Hidden media elements — always mounted so refs are stable */}
+            {/* Hidden audio element — always mounted so ref is stable */}
             <audio ref={audioRef} style={{ display: "none" }} />
-            <video
-                ref={videoRef}
-                className={`video-element ${videoVisible ? "video-element--visible" : ""}`}
-            />
 
             <div className="app__main">
                 {/* Left panel: track info + visualizer + controls */}
                 <div className="app__panel app__panel--left">
+                    <video
+                        ref={videoRef}
+                        className={`video-element ${videoVisible ? "video-element--visible" : ""}`}
+                    />
                     <div className="player-card">
                         <TrackInfo track={state.currentTrack} playing={state.playing} />
 
