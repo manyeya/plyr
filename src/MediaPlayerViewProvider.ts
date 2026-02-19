@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as os from "os";
+import { parseMediaMetadata } from "./utils";
 
 /**
  * WebviewViewProvider — renders the media player in the VS Code sidebar.
@@ -73,10 +74,14 @@ export class MediaPlayerViewProvider implements vscode.WebviewViewProvider {
                         });
                         if (!uris || uris.length === 0) break;
 
-                        const files = uris.map((uri) => ({
-                            url: webviewView.webview.asWebviewUri(uri).toString(),
-                            name: uri.fsPath.split(/[\\/]/).pop() ?? uri.fsPath,
-                        }));
+                        const files = await Promise.all(
+                            uris.map(async (uri) => {
+                                const url = webviewView.webview.asWebviewUri(uri).toString();
+                                const name = uri.fsPath.split(/[\\/]/).pop() ?? uri.fsPath;
+                                const metadata = await parseMediaMetadata(uri.fsPath);
+                                return { url, name, ...metadata };
+                            })
+                        );
                         webviewView.webview.postMessage({ type: "addFiles", files });
                         break;
                     }

@@ -21,6 +21,9 @@ export interface Track {
     url: string;
     duration?: number;
     type: "audio" | "video";
+    artwork?: string; // data: URL with embedded cover art, if present
+    title?: string;
+    artist?: string;
 }
 
 export interface PlayerState {
@@ -246,7 +249,7 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
     }, []);
 
     const addFiles = useCallback(
-        (files: { url: string; name: string }[]) => {
+        (files: { url: string; name: string; artwork?: string; title?: string; artist?: string }[]) => {
             const newTracks: Track[] = files.map((f) => {
                 const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
                 const videoExts = ["mp4", "mkv", "webm", "avi", "mov", "m4v"];
@@ -254,9 +257,12 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
                     id: `${Date.now()}-${Math.random()}`,
                     name: f.name.replace(/\.[^.]+$/, ""),
                     path: f.url,
-                    url: f.url,  // Already a proper webview URI from the extension host
+                    url: f.url,
                     type: videoExts.includes(ext) ? "video" : "audio",
-                } as Track;
+                    artwork: f.artwork,
+                    title: f.title,
+                    artist: f.artist,
+                };
             });
 
             setState((prev) => {

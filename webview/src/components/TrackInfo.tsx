@@ -6,25 +6,39 @@ interface TrackInfoProps {
     playing: boolean;
 }
 
-function generateGradient(name: string): string {
+/** Deterministic solid color from a track name — no gradients */
+function solidColor(name: string): string {
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const hue1 = hash & 0xff;
-    const hue2 = (hue1 + 50) % 360;
-    return `linear-gradient(135deg, hsl(${hue1}, 70%, 45%), hsl(${hue2}, 80%, 35%))`;
+    const hue = ((hash >>> 0) % 360);
+    return `hsl(${hue}, 40%, 28%)`;
 }
 
 export const TrackInfo: React.FC<TrackInfoProps> = ({ track, playing }) => {
+    const bg = track
+        ? track.artwork
+            ? undefined                   // image handles the background
+            : solidColor(track.name)
+        : "hsl(230, 25%, 14%)";           // empty state
+
     return (
         <div className="track-info">
             <div
                 className={`album-art ${playing ? "album-art--playing" : ""}`}
-                style={{ background: track ? generateGradient(track.name) : "linear-gradient(135deg, #1a1a2e, #16213e)" }}
+                style={{ background: bg }}
                 aria-label="Album art"
             >
-                {track ? (
+                {track?.artwork ? (
+                    // Actual embedded cover art
+                    <img
+                        src={track.artwork}
+                        alt="Album art"
+                        className="album-art__img"
+                        draggable={false}
+                    />
+                ) : track ? (
                     <>
                         <div className="album-art__icon">
                             {track.type === "video" ? "🎬" : "🎵"}
@@ -43,9 +57,10 @@ export const TrackInfo: React.FC<TrackInfoProps> = ({ track, playing }) => {
             </div>
 
             <div className="track-meta">
-                <p className="track-meta__title" title={track?.name ?? "No track loaded"}>
-                    {track?.name ?? "No track loaded"}
+                <p className="track-meta__title" title={track?.title ?? track?.name ?? "No track loaded"}>
+                    {track?.title ?? track?.name ?? "No track loaded"}
                 </p>
+                {track?.artist && <p className="track-meta__artist" title={track.artist}>{track.artist}</p>}
                 <p className="track-meta__type">
                     {track
                         ? track.type === "video"

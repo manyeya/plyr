@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as os from "os";
+import { parseMediaMetadata } from "./utils";
 
 export interface PlayerStatus {
     playing: boolean;
@@ -106,11 +107,14 @@ export class MediaPlayerPanel {
                         });
                         if (!uris || uris.length === 0) break;
 
-                        const files = uris.map((uri) => ({
-                            // Use asWebviewUri so the webview can load the file
-                            url: this._panel.webview.asWebviewUri(uri).toString(),
-                            name: uri.fsPath.split(/[\\/]/).pop() ?? uri.fsPath,
-                        }));
+                        const files = await Promise.all(
+                            uris.map(async (uri) => {
+                                const url = this._panel.webview.asWebviewUri(uri).toString();
+                                const name = uri.fsPath.split(/[/\\]/).pop() ?? uri.fsPath;
+                                const metadata = await parseMediaMetadata(uri.fsPath);
+                                return { url, name, ...metadata };
+                            })
+                        );
                         this._panel.webview.postMessage({ type: "addFiles", files });
                         break;
                     }

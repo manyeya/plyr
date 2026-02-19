@@ -89,8 +89,8 @@ const DraggableTrackItem: React.FC<DraggableTrackItemProps> = ({
                 )}
             </span>
 
-            <span className="playlist__item-name" title={track.name}>
-                {track.name}
+            <span className="playlist__item-name" title={track.title && track.artist ? `${track.artist} - ${track.title}` : track.title ?? track.name}>
+                {track.title && track.artist ? `${track.artist} - ${track.title}` : track.title ?? track.name}
             </span>
 
             <span className="playlist__item-type">{track.type === "video" ? "🎬" : "🎵"}</span>

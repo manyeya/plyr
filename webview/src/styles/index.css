@@ -195,6 +195,15 @@ body.vscode-high-contrast .playlist {
   font-size: 28px;
 }
 
+.album-art__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 .album-art__icon--empty {
   opacity: 0.3;
   font-size: 32px;
