@@ -1,0 +1,143 @@
+{
+    "name": "vscode-media-player",
+    "displayName": "Media Player",
+    "description": "A feature-rich media player (audio & video) embedded inside VS Code",
+    "version": "0.1.0",
+    "publisher": "media-player",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "icon": "resources/icon.png",
+    "activationEvents": [],
+    "main": "./out/extension.js",
+    "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "media-player-container",
+                    "title": "Media Player",
+                    "icon": "resources/sidebar-icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "media-player-container": [
+                {
+                    "type": "webview",
+                    "id": "player.sidebar",
+                    "name": "Now Playing",
+                    "retainContextWhenHidden": true
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "player.open",
+                "title": "Open Player",
+                "category": "Media Player",
+                "icon": "$(play)"
+            },
+            {
+                "command": "player.togglePlay",
+                "title": "Toggle Play/Pause",
+                "category": "Media Player"
+            },
+            {
+                "command": "player.openFile",
+                "title": "Open Media File",
+                "category": "Media Player",
+                "icon": "$(file-media)"
+            },
+            {
+                "command": "player.next",
+                "title": "Next Track",
+                "category": "Media Player"
+            },
+            {
+                "command": "player.prev",
+                "title": "Previous Track",
+                "category": "Media Player"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "player.open",
+                "key": "ctrl+shift+m",
+                "mac": "cmd+shift+m"
+            },
+            {
+                "command": "player.togglePlay",
+                "key": "ctrl+shift+space",
+                "mac": "cmd+shift+space"
+            }
+        ],
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "player.open",
+                    "group": "navigation"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "player.openFile",
+                    "when": "view == player.sidebar",
+                    "group": "navigation"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Media Player",
+            "properties": {
+                "mediaPlayer.defaultVolume": {
+                    "type": "number",
+                    "default": 80,
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Default playback volume (0-100)"
+                },
+                "mediaPlayer.autoplay": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Automatically play media when opened"
+                },
+                "mediaPlayer.defaultSpeed": {
+                    "type": "number",
+                    "default": 1,
+                    "enum": [
+                        0.5,
+                        0.75,
+                        1,
+                        1.25,
+                        1.5,
+                        1.75,
+                        2
+                    ],
+                    "description": "Default playback speed"
+                }
+            }
+        }
+    },
+    "packageManager": "bun@1.2.3",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "node esbuild.js",
+        "watch": "node esbuild.js --watch",
+        "lint": "eslint src --ext ts"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "@types/vscode": "^1.85.0",
+        "esbuild": "^0.20.0",
+        "typescript": "^5.3.0"
+    },
+    "dependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0"
+    }
+}
