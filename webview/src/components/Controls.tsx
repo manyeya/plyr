@@ -16,7 +16,6 @@ interface ControlsProps {
     onSetSpeed: (s: number) => void;
     onNext: () => void;
     onPrev: () => void;
-    onOpenFile: () => void;
 }
 
 function formatTime(secs: number): string {
@@ -42,7 +41,6 @@ export const Controls: React.FC<ControlsProps> = ({
     onSetSpeed,
     onNext,
     onPrev,
-    onOpenFile,
 }) => {
     const seekRef = useRef<HTMLInputElement>(null);
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -71,21 +69,6 @@ export const Controls: React.FC<ControlsProps> = ({
 
             {/* Main controls row */}
             <div className="controls__row">
-                {/* Left: open file */}
-                <div className="controls__side controls__side--left">
-                    <button
-                        className="ctrl-btn ctrl-btn--icon"
-                        onClick={onOpenFile}
-                        title="Open file(s) (Ctrl+Shift+O)"
-                        aria-label="Open file"
-                    >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-                            <line x1="12" y1="11" x2="12" y2="17" />
-                            <polyline points="9 14 12 11 15 14" />
-                        </svg>
-                    </button>
-                </div>
 
                 {/* Center: prev, play/pause, next */}
                 <div className="controls__center">

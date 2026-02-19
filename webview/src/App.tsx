@@ -151,7 +151,6 @@ export const App: React.FC = () => {
                             onSetSpeed={setSpeed}
                             onNext={next}
                             onPrev={prev}
-                            onOpenFile={handleOpenFile}
                         />
                     </div>
                 </div>
