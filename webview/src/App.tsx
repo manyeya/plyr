@@ -33,10 +33,13 @@ export const App: React.FC = () => {
         addFiles,
         removeTrack,
         bindMediaEvents,
+        toggleShuffle,
+        cycleRepeat,
+        reorderPlaylist,
     } = usePlayer(config.defaultVolume, config.defaultSpeed);
 
-    // Bind media element events once on mount. The elements are always rendered
-    // (hidden), so refs are populated by the time this runs.
+    // Bind media element events once — bindMediaEvents is now stable (uses a ref
+    // internally for track name) so a single bind on mount is sufficient.
     useEffect(() => {
         const cleanupAudio = bindMediaEvents(audioRef.current);
         const cleanupVideo = bindMediaEvents(videoRef.current);
@@ -46,17 +49,6 @@ export const App: React.FC = () => {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // intentionally run once — refs are stable
-
-    // Re-bind when the track changes so the status bar name stays current
-    useEffect(() => {
-        const cleanupAudio = bindMediaEvents(audioRef.current);
-        const cleanupVideo = bindMediaEvents(videoRef.current);
-        return () => {
-            cleanupAudio();
-            cleanupVideo();
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state.currentTrack?.name]);
 
     // Show/hide video depending on current track type
     useEffect(() => {
@@ -160,9 +152,14 @@ export const App: React.FC = () => {
                     <Playlist
                         tracks={state.playlist}
                         currentIndex={state.currentIndex}
+                        shuffle={state.shuffle}
+                        repeatMode={state.repeatMode}
                         onSelect={goToIndex}
                         onRemove={removeTrack}
                         onAddFiles={handleOpenFile}
+                        onToggleShuffle={toggleShuffle}
+                        onCycleRepeat={cycleRepeat}
+                        onReorder={reorderPlaylist}
                     />
                 </div>
             </div>

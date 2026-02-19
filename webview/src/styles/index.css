@@ -461,6 +461,10 @@ body.vscode-high-contrast .playlist {
   height: 12px;
 }
 
+.ctrl-btn--active {
+  color: var(--accent);
+}
+
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -688,6 +692,100 @@ body.vscode-high-contrast .playlist {
 .playlist__remove:hover {
   background: rgba(248, 113, 113, 0.15);
   color: var(--danger);
+}
+
+/* ─── Playlist header actions ───────────────────────────── */
+.playlist__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Mode buttons (shuffle / repeat) */
+.playlist__mode-btn {
+  position: relative;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition), border-color var(--transition);
+  flex-shrink: 0;
+}
+
+.playlist__mode-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.playlist__mode-btn:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.playlist__mode-btn--active {
+  color: var(--accent);
+}
+
+.playlist__mode-btn--active:hover {
+  color: var(--accent);
+  background: var(--surface-hover);
+}
+
+/* repeat-one badge */
+.playlist__mode-badge {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  pointer-events: none;
+}
+
+/* ─── Drag handle ───────────────────────────────────────── */
+.playlist__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--text-dim);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity var(--transition);
+  border-radius: 3px;
+}
+
+.playlist__drag-handle:active {
+  cursor: grabbing;
+}
+
+.playlist__item:hover .playlist__drag-handle {
+  opacity: 0.5;
+}
+
+.playlist__drag-handle:hover {
+  opacity: 1 !important;
+  color: var(--text);
+}
+
+/* Dragging / drop-over states */
+.playlist__item--dragging {
+  opacity: 0.35;
+  background: var(--surface);
+}
+
+.playlist__item--over {
+  background: var(--accent-glow);
+  border-top: 1px solid var(--accent);
 }
 
 /* ─── Scrollbars global ─────────────────────────────────── */

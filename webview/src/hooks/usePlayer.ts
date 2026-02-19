@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { postToExtension, getVsCodeApi } from "../vscode";
 
+export type RepeatMode = "off" | "all" | "one";
+
 // Shape of what we persist in VS Code's webview state
 interface PersistedState {
     playlist: Track[];
@@ -8,6 +10,8 @@ interface PersistedState {
     volume: number;
     muted: boolean;
     speed: number;
+    shuffle: boolean;
+    repeatMode: RepeatMode;
 }
 
 export interface Track {
@@ -30,6 +34,8 @@ export interface PlayerState {
     muted: boolean;
     speed: number;
     loading: boolean;
+    shuffle: boolean;
+    repeatMode: RepeatMode;
 }
 
 export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
@@ -50,6 +56,8 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
             muted: saved?.muted ?? false,
             speed: saved?.speed ?? defaultSpeed,
             loading: false,
+            shuffle: saved?.shuffle ?? false,
+            repeatMode: saved?.repeatMode ?? "off",
         };
     });
 
@@ -57,6 +65,12 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
         const track = state.currentTrack;
         if (!track) return null;
         return track.type === "video" ? videoRef.current : audioRef.current;
+    }, [state.currentTrack]);
+
+    // Always-current ref for track name — lets bindMediaEvents stay stable
+    const currentTrackRef = useRef(state.currentTrack);
+    useEffect(() => {
+        currentTrackRef.current = state.currentTrack;
     }, [state.currentTrack]);
 
     const loadTrack = useCallback(
@@ -123,6 +137,19 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
         if (videoRef.current) videoRef.current.playbackRate = speed;
     }, []);
 
+    const toggleShuffle = useCallback(() => {
+        setState((prev) => ({ ...prev, shuffle: !prev.shuffle }));
+    }, []);
+
+    const cycleRepeat = useCallback(() => {
+        setState((prev) => {
+            const next: RepeatMode =
+                prev.repeatMode === "off" ? "all" :
+                    prev.repeatMode === "all" ? "one" : "off";
+            return { ...prev, repeatMode: next };
+        });
+    }, []);
+
     const goToIndex = useCallback(
         (index: number) => {
             setState((prev) => {
@@ -135,10 +162,44 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
         [loadTrack]
     );
 
+    // next is defined via useRef so onEnded can always see the latest state
+    // without recreating itself (which would break bindMediaEvents stability).
+    const stateRef = useRef(state);
+    stateRef.current = state;
+
     const next = useCallback(() => {
         setState((prev) => {
-            const nextIdx = (prev.currentIndex + 1) % prev.playlist.length;
             if (prev.playlist.length === 0) return prev;
+
+            // repeat-one: restart current track
+            if (prev.repeatMode === "one") {
+                const media = prev.currentTrack?.type === "video" ? videoRef.current : audioRef.current;
+                if (media) {
+                    media.currentTime = 0;
+                    media.play().catch(() => { });
+                }
+                return prev;
+            }
+
+            let nextIdx: number;
+            if (prev.shuffle) {
+                // pick random index different from current (if more than 1 track)
+                if (prev.playlist.length === 1) {
+                    nextIdx = 0;
+                } else {
+                    do {
+                        nextIdx = Math.floor(Math.random() * prev.playlist.length);
+                    } while (nextIdx === prev.currentIndex);
+                }
+            } else {
+                nextIdx = (prev.currentIndex + 1) % prev.playlist.length;
+                // if not repeat-all and we just wrapped, don't play
+                if (prev.repeatMode === "off" && nextIdx === 0 && prev.playlist.length > 1) {
+                    // stop at end — don't advance
+                    return prev;
+                }
+            }
+
             const track = prev.playlist[nextIdx];
             loadTrack(track, true);
             return { ...prev, currentIndex: nextIdx };
@@ -148,7 +209,7 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
     const prev = useCallback(() => {
         setState((prev) => {
             if (prev.playlist.length === 0) return prev;
-            // if > 3s played, restart; else go previous
+            // if >3s played, restart; else go previous
             const media = prev.currentTrack?.type === "video" ? videoRef.current : audioRef.current;
             if (media && media.currentTime > 3) {
                 media.currentTime = 0;
@@ -161,6 +222,28 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
             return { ...prev, currentIndex: prevIdx };
         });
     }, [loadTrack]);
+
+    /** Move a track from `fromIdx` to `toIdx`, keeping currentIndex following the playing track. */
+    const reorderPlaylist = useCallback((fromIdx: number, toIdx: number) => {
+        if (fromIdx === toIdx) return;
+        setState((prev) => {
+            const list = [...prev.playlist];
+            const [moved] = list.splice(fromIdx, 1);
+            list.splice(toIdx, 0, moved);
+
+            // Calculate new currentIndex so it still points to the playing track
+            let newCurrentIndex = prev.currentIndex;
+            if (prev.currentIndex === fromIdx) {
+                newCurrentIndex = toIdx;
+            } else if (fromIdx < prev.currentIndex && toIdx >= prev.currentIndex) {
+                newCurrentIndex -= 1;
+            } else if (fromIdx > prev.currentIndex && toIdx <= prev.currentIndex) {
+                newCurrentIndex += 1;
+            }
+
+            return { ...prev, playlist: list, currentIndex: newCurrentIndex };
+        });
+    }, []);
 
     const addFiles = useCallback(
         (files: { url: string; name: string }[]) => {
@@ -199,13 +282,13 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
             volume: state.volume,
             muted: state.muted,
             speed: state.speed,
+            shuffle: state.shuffle,
+            repeatMode: state.repeatMode,
         };
         api.setState(persisted);
-    }, [state.playlist, state.currentIndex, state.volume, state.muted, state.speed]);
+    }, [state.playlist, state.currentIndex, state.volume, state.muted, state.speed, state.shuffle, state.repeatMode]);
 
     // On first load, if we restored a playlist, re-attach the current track src
-    // (VS Code state survives panel hide but NOT a full reload; on true reload
-    // blob: URLs are gone, but vscode-webview URIs are still valid)
     const didRestore = useRef(false);
     useEffect(() => {
         if (didRestore.current) return;
@@ -248,7 +331,7 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
                 postToExtension({
                     type: "statusUpdate",
                     playing: true,
-                    trackName: state.currentTrack?.name,
+                    trackName: currentTrackRef.current?.name,
                 });
             };
             const onPause = () => {
@@ -256,7 +339,7 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
                 postToExtension({
                     type: "statusUpdate",
                     playing: false,
-                    trackName: state.currentTrack?.name,
+                    trackName: currentTrackRef.current?.name,
                 });
             };
             const onEnded = () => next();
@@ -281,7 +364,7 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
                 el.removeEventListener("canplay", onCanPlay);
             };
         },
-        [next, state.currentTrack?.name]
+        [next]  // stable: no longer captures state directly
     );
 
     // Keyboard shortcuts
@@ -318,11 +401,19 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
                 case "P":
                     prev();
                     break;
+                case "s":
+                case "S":
+                    toggleShuffle();
+                    break;
+                case "r":
+                case "R":
+                    cycleRepeat();
+                    break;
             }
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
-    }, [togglePlay, seek, setVolume, toggleMute, next, prev, getMedia, state.volume]);
+    }, [togglePlay, seek, setVolume, toggleMute, next, prev, toggleShuffle, cycleRepeat, getMedia, state.volume]);
 
     return {
         state,
@@ -341,5 +432,8 @@ export function usePlayer(defaultVolume = 80, defaultSpeed = 1) {
         addFiles,
         removeTrack,
         bindMediaEvents,
+        toggleShuffle,
+        cycleRepeat,
+        reorderPlaylist,
     };
 }
