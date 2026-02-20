@@ -93,7 +93,26 @@ const DraggableTrackItem: React.FC<DraggableTrackItemProps> = ({
                 {track.title && track.artist ? `${track.artist} - ${track.title}` : track.title ?? track.name}
             </span>
 
-            <span className="playlist__item-type">{track.type === "video" ? "🎬" : "🎵"}</span>
+            <span className="playlist__item-type">
+                {track.type === "video" ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" width="13" height="13">
+                        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                        <line x1="7" y1="2" x2="7" y2="22" />
+                        <line x1="17" y1="2" x2="17" y2="22" />
+                        <line x1="2" y1="12" x2="22" y2="12" />
+                        <line x1="2" y1="7" x2="7" y2="7" />
+                        <line x1="2" y1="17" x2="7" y2="17" />
+                        <line x1="17" y1="17" x2="22" y2="17" />
+                        <line x1="17" y1="7" x2="22" y2="7" />
+                    </svg>
+                ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" width="13" height="13">
+                        <path d="M9 18V5l12-2v13" />
+                        <circle cx="6" cy="18" r="3" />
+                        <circle cx="18" cy="16" r="3" />
+                    </svg>
+                )}
+            </span>
 
             <button
                 className="playlist__remove"
