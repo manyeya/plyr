@@ -1,9 +1,13 @@
 {
-    "name": "vscode-media-player",
-    "displayName": "Media Player",
+    "name": "plyr",
+    "displayName": "Plyr",
     "description": "A feature-rich media player (audio & video) embedded inside VS Code",
     "version": "0.1.0",
-    "publisher": "media-player",
+    "publisher": "manyeya",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/manyeya/plyr"
+    },
     "engines": {
         "vscode": "^1.85.0"
     },
@@ -18,7 +22,7 @@
             "activitybar": [
                 {
                     "id": "media-player-container",
-                    "title": "Media Player",
+                    "title": "Plyr",
                     "icon": "resources/sidebar-icon.svg"
                 }
             ]
@@ -28,7 +32,8 @@
                 {
                     "type": "webview",
                     "id": "player.sidebar",
-                    "name": "Now Playing",
+                    "name": "Home",
+                    "icon": "resources/sidebar-icon.svg",
                     "retainContextWhenHidden": true
                 }
             ]
@@ -36,30 +41,30 @@
         "commands": [
             {
                 "command": "player.open",
-                "title": "Open Player",
-                "category": "Media Player",
+                "title": "Open Plyr",
+                "category": "Plyr",
                 "icon": "$(play)"
             },
             {
                 "command": "player.togglePlay",
                 "title": "Toggle Play/Pause",
-                "category": "Media Player"
+                "category": "Plyr"
             },
             {
                 "command": "player.openFile",
                 "title": "Open Media File",
-                "category": "Media Player",
+                "category": "Plyr",
                 "icon": "$(file-media)"
             },
             {
                 "command": "player.next",
                 "title": "Next Track",
-                "category": "Media Player"
+                "category": "Plyr"
             },
             {
                 "command": "player.prev",
                 "title": "Previous Track",
-                "category": "Media Player"
+                "category": "Plyr"
             }
         ],
         "keybindings": [
@@ -90,7 +95,7 @@
             ]
         },
         "configuration": {
-            "title": "Media Player",
+            "title": "Plyr",
             "properties": {
                 "mediaPlayer.defaultVolume": {
                     "type": "number",
