@@ -95,12 +95,12 @@ function updateStatusBar(status: { playing: boolean; trackName?: string }) {
         : status.trackName;
 
     if (status.playing && displayName) {
-        statusBarItem.text = `$(pulse) ${displayName}`;
-        statusBarItem.tooltip = `Media Player — ${status.trackName}`;
+        statusBarItem.text = `$(debug-pause) ${displayName}`;
+        statusBarItem.tooltip = `Plyr — ${status.trackName}`;
         statusBarItem.show();
     } else if (displayName) {
         statusBarItem.text = `$(play) ${displayName}`;
-        statusBarItem.tooltip = `Media Player — ${status.trackName}`;
+        statusBarItem.tooltip = `Plyr — ${status.trackName}`;
         statusBarItem.show();
     } else {
         statusBarItem.hide();
