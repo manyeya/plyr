@@ -3,7 +3,8 @@ import { usePlayer } from "./hooks/usePlayer";
 import { TrackInfo } from "./components/TrackInfo";
 import { Controls } from "./components/Controls";
 import { Playlist } from "./components/Playlist";
-import { postToExtension } from "./vscode";
+import { Settings } from "./components/Settings";
+import { postToExtension, getVsCodeApi } from "./vscode";
 
 interface VSCodeMessage {
     type: string;
@@ -16,6 +17,25 @@ interface VSCodeMessage {
 export const App: React.FC = () => {
     const [config, setConfig] = React.useState({ defaultVolume: 80, defaultSpeed: 1 });
     const [videoVisible, setVideoVisible] = React.useState(false);
+    const [settingsOpen, setSettingsOpen] = React.useState(false);
+    const [settings, setSettings] = React.useState({
+        enableShadows: true,
+        artworkShape: "square" as "square" | "circle",
+    });
+
+    // Restore settings from persisted state
+    useEffect(() => {
+        const api = getVsCodeApi();
+        if (api) {
+            const savedState = api.getState() as any;
+            if (savedState?.settings) {
+                setSettings({
+                    enableShadows: savedState.settings.enableShadows ?? true,
+                    artworkShape: savedState.settings.artworkShape ?? "square",
+                });
+            }
+        }
+    }, []);
 
     const {
         state,
@@ -77,6 +97,9 @@ export const App: React.FC = () => {
                         defaultSpeed: msg.defaultSpeed ?? 1,
                     });
                     break;
+                case "openSettings":
+                    setSettingsOpen(true);
+                    break;
             }
         };
         window.addEventListener("message", handler);
@@ -102,7 +125,7 @@ export const App: React.FC = () => {
     const isAudio = state.currentTrack?.type !== "video";
 
     return (
-        <div className="app">
+        <div className={`app ${!settings.enableShadows ? "app--no-shadows" : ""}`}>
             {/* Hidden audio element — always mounted so ref is stable */}
             <audio ref={audioRef} style={{ display: "none" }} />
 
@@ -114,7 +137,12 @@ export const App: React.FC = () => {
                         className={`video-element ${videoVisible ? "video-element--visible" : ""}`}
                     />
                     <div className="player-card">
-                        <TrackInfo track={state.currentTrack} playing={state.playing} />
+                        <TrackInfo
+                            track={state.currentTrack}
+                            playing={state.playing}
+                            enableShadows={settings.enableShadows}
+                            artworkShape={settings.artworkShape}
+                        />
 
 
                         <Controls
@@ -153,6 +181,20 @@ export const App: React.FC = () => {
                     />
                 </div>
             </div>
+
+            <Settings
+                isOpen={settingsOpen}
+                onClose={() => setSettingsOpen(false)}
+                settings={settings}
+                onUpdateSettings={(newSettings) => {
+                    setSettings(newSettings);
+                    const api = getVsCodeApi();
+                    if (api) {
+                        const currentState = api.getState() as any || {};
+                        api.setState({ ...currentState, settings: newSettings });
+                    }
+                }}
+            />
         </div>
     );
 };

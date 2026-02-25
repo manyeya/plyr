@@ -81,7 +81,12 @@ export function activate(context: vscode.ExtensionContext) {
         MediaPlayerPanel.current?.postMessage({ type: "prev" });
     });
 
-    context.subscriptions.push(openCmd, toggleCmd, openFileCmd, nextCmd, prevCmd);
+    const openSettingsCmd = vscode.commands.registerCommand("player.openSettings", () => {
+        viewProvider.postMessage({ type: "openSettings" });
+        MediaPlayerPanel.current?.postMessage({ type: "openSettings" });
+    });
+
+    context.subscriptions.push(openCmd, toggleCmd, openFileCmd, nextCmd, prevCmd, openSettingsCmd);
 
     // ─── Status bar updates from both panel and sidebar ────────────────────────
     MediaPlayerPanel.onStatusUpdate(updateStatusBar);

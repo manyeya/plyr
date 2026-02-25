@@ -4,10 +4,17 @@ import type { Track } from "../hooks/usePlayer";
 interface TrackInfoProps {
     track: Track | null;
     playing: boolean;
+    enableShadows?: boolean;
+    artworkShape?: "square" | "circle";
 }
 
 
-export const TrackInfo: React.FC<TrackInfoProps> = ({ track, playing }) => {
+export const TrackInfo: React.FC<TrackInfoProps> = ({
+    track,
+    playing,
+    enableShadows = true,
+    artworkShape = "square"
+}) => {
     const bg = track?.artwork ? undefined : "var(--surface)";
 
     const showPreview = track?.type !== "video"; // hide preview for video types
@@ -16,7 +23,7 @@ export const TrackInfo: React.FC<TrackInfoProps> = ({ track, playing }) => {
         <div className="track-info">
             {showPreview && (
                 <div
-                    className={`album-art ${playing ? "album-art--playing" : ""}`}
+                    className={`album-art ${playing ? "album-art--playing" : ""} ${artworkShape === "circle" ? "album-art--circle" : ""} ${!enableShadows ? "album-art--no-shadow" : ""}`}
                     style={{ background: bg }}
                     aria-label="Album art"
                 >
@@ -60,6 +67,7 @@ export const TrackInfo: React.FC<TrackInfoProps> = ({ track, playing }) => {
                             </svg>
                         </div>
                     )}
+
                 </div>
             )}
 

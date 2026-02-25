@@ -32,7 +32,7 @@
                 {
                     "type": "webview",
                     "id": "player.sidebar",
-                    "name": "Plyr",
+                    "name": "",
                     "icon": "resources/sidebar-icon.svg",
                     "retainContextWhenHidden": true
                 }
@@ -65,6 +65,12 @@
                 "command": "player.prev",
                 "title": "Previous Track",
                 "category": "Plyr"
+            },
+            {
+                "command": "player.openSettings",
+                "title": "Settings",
+                "category": "Plyr",
+                "icon": "$(gear)"
             }
         ],
         "keybindings": [
@@ -88,7 +94,7 @@
             ],
             "view/title": [
                 {
-                    "command": "player.openFile",
+                    "command": "player.openSettings",
                     "when": "view == player.sidebar",
                     "group": "navigation"
                 }
