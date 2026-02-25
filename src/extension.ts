@@ -83,17 +83,23 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(openCmd, toggleCmd, openFileCmd, nextCmd, prevCmd);
 
-    // ─── Status bar updates from panel ────────────────────────────────────────
+    // ─── Status bar updates from both panel and sidebar ────────────────────────
     MediaPlayerPanel.onStatusUpdate(updateStatusBar);
+    MediaPlayerViewProvider.onStatusUpdate(updateStatusBar);
 }
 
 function updateStatusBar(status: { playing: boolean; trackName?: string }) {
-    if (status.playing && status.trackName) {
-        statusBarItem.text = `$(sync~spin) ${status.trackName}`;
+    const maxLength = 40;
+    const displayName = status.trackName && status.trackName.length > maxLength
+        ? status.trackName.substring(0, maxLength - 1) + "…"
+        : status.trackName;
+
+    if (status.playing && displayName) {
+        statusBarItem.text = `$(pulse) ${displayName}`;
         statusBarItem.tooltip = `Media Player — ${status.trackName}`;
         statusBarItem.show();
-    } else if (status.trackName) {
-        statusBarItem.text = `$(play) ${status.trackName}`;
+    } else if (displayName) {
+        statusBarItem.text = `$(play) ${displayName}`;
         statusBarItem.tooltip = `Media Player — ${status.trackName}`;
         statusBarItem.show();
     } else {

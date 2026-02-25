@@ -2,6 +2,13 @@ import * as vscode from "vscode";
 import * as os from "os";
 import { parseMediaMetadata } from "./utils";
 
+export interface PlayerStatus {
+    playing: boolean;
+    trackName?: string;
+}
+
+type StatusCallback = (status: PlayerStatus) => void;
+
 /**
  * WebviewViewProvider — renders the media player in the VS Code sidebar.
  * Registered once at activation; VS Code calls resolveWebviewView() the first
@@ -13,12 +20,18 @@ export class MediaPlayerViewProvider implements vscode.WebviewViewProvider {
     /** Exposed so the extension can post messages to the sidebar from commands. */
     public static current: MediaPlayerViewProvider | undefined;
 
+    private static statusCallbacks: StatusCallback[] = [];
+
     private _view?: vscode.WebviewView;
     private readonly _context: vscode.ExtensionContext;
 
     constructor(context: vscode.ExtensionContext) {
         this._context = context;
         MediaPlayerViewProvider.current = this;
+    }
+
+    public static onStatusUpdate(cb: StatusCallback): void {
+        MediaPlayerViewProvider.statusCallbacks.push(cb);
     }
 
     public resolveWebviewView(
@@ -48,6 +61,12 @@ export class MediaPlayerViewProvider implements vscode.WebviewViewProvider {
                     case "statusUpdate":
                         // Forward to extension-level handler (status bar, etc.)
                         this._context.globalState.update("player.playing", message.playing);
+                        MediaPlayerViewProvider.statusCallbacks.forEach((cb) =>
+                            cb({
+                                playing: message.playing as boolean,
+                                trackName: message.trackName as string | undefined,
+                            })
+                        );
                         break;
 
                     case "requestConfig": {
