@@ -2,7 +2,7 @@
     "name": "plyr",
     "displayName": "Plyr",
     "description": "A feature-rich media player (audio & video) embedded inside VS Code",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "publisher": "manyeya",
     "repository": {
         "type": "git",
