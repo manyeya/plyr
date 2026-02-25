@@ -32,7 +32,7 @@
                 {
                     "type": "webview",
                     "id": "player.sidebar",
-                    "name": "Home",
+                    "name": "Plyr",
                     "icon": "resources/sidebar-icon.svg",
                     "retainContextWhenHidden": true
                 }
