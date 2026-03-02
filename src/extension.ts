@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { MediaPlayerPanel } from "./MediaPlayerPanel";
 import { MediaPlayerViewProvider } from "./MediaPlayerViewProvider";
+import { ErrorSoundManager } from "./ErrorSoundManager";
 
 let statusBarItem: vscode.StatusBarItem;
 
@@ -14,8 +15,12 @@ export function activate(context: vscode.ExtensionContext) {
     statusBarItem.command = "player.sidebar.focus";
     context.subscriptions.push(statusBarItem);
 
+    // ─── Error Sound ──────────────────────────────────────────────────────────
+    const errorSoundManager = new ErrorSoundManager(context);
+    context.subscriptions.push(errorSoundManager);
+
     // ─── Sidebar view provider (primary interface) ────────────────────────────
-    const viewProvider = new MediaPlayerViewProvider(context);
+    const viewProvider = new MediaPlayerViewProvider(context, errorSoundManager);
     context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(
             MediaPlayerViewProvider.viewType,
@@ -24,6 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
             { webviewOptions: { retainContextWhenHidden: true } }
         )
     );
+
+    // Give ErrorSoundManager a reference to the sidebar so it can trigger sounds
+    errorSoundManager.setController(viewProvider);
 
     // ─── Commands ─────────────────────────────────────────────────────────────
 
@@ -87,6 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(openCmd, toggleCmd, openFileCmd, nextCmd, prevCmd, openSettingsCmd);
+
 
     // ─── Status bar updates from both panel and sidebar ────────────────────────
     MediaPlayerPanel.onStatusUpdate(updateStatusBar);

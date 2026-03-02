@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { usePlayer } from "./hooks/usePlayer";
 import { TrackInfo } from "./components/TrackInfo";
 import { Controls } from "./components/Controls";
@@ -8,10 +8,17 @@ import { postToExtension, getVsCodeApi } from "./vscode";
 
 interface VSCodeMessage {
     type: string;
-    // Files always come from the extension host with pre-converted webview URIs
     files?: { url: string; name: string }[];
     defaultVolume?: number;
     defaultSpeed?: number;
+    errorSoundEnabled?: boolean;
+    errorSoundCooldown?: number;
+    errorSoundDeduplication?: boolean;
+    soundUrl?: string;
+    volume?: number;
+    wasPlaying?: boolean;
+    name?: string;
+    customSoundName?: string;
 }
 
 export const App: React.FC = () => {
@@ -19,9 +26,16 @@ export const App: React.FC = () => {
     const [videoVisible, setVideoVisible] = React.useState(false);
     const [settingsOpen, setSettingsOpen] = React.useState(false);
     const [settings, setSettings] = React.useState({
-        enableShadows: true,
+        enableShadows: false,
         artworkShape: "square" as "square" | "circle",
+        errorSoundEnabled: true,
+        errorSoundCooldown: 5000,
+        errorSoundDeduplication: true,
     });
+    const [customSoundName, setCustomSoundName] = React.useState<string | undefined>(undefined);
+
+    // Dedicated hidden audio element for the error sound
+    const errorAudioRef = useRef<HTMLAudioElement>(null);
 
     // Restore settings from persisted state
     useEffect(() => {
@@ -30,8 +44,11 @@ export const App: React.FC = () => {
             const savedState = api.getState() as any;
             if (savedState?.settings) {
                 setSettings({
-                    enableShadows: savedState.settings.enableShadows ?? true,
+                    enableShadows: savedState.settings.enableShadows ?? false,
                     artworkShape: savedState.settings.artworkShape ?? "square",
+                    errorSoundEnabled: savedState.settings.errorSoundEnabled ?? true,
+                    errorSoundCooldown: savedState.settings.errorSoundCooldown ?? 5000,
+                    errorSoundDeduplication: savedState.settings.errorSoundDeduplication ?? true,
                 });
             }
         }
@@ -57,8 +74,6 @@ export const App: React.FC = () => {
         reorderPlaylist,
     } = usePlayer(config.defaultVolume, config.defaultSpeed);
 
-    // Bind media element events once — bindMediaEvents is now stable (uses a ref
-    // internally for track name) so a single bind on mount is sufficient.
     useEffect(() => {
         const cleanupAudio = bindMediaEvents(audioRef.current);
         const cleanupVideo = bindMediaEvents(videoRef.current);
@@ -67,12 +82,18 @@ export const App: React.FC = () => {
             cleanupVideo();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // intentionally run once — refs are stable
+    }, []);
 
-    // Show/hide video depending on current track type
     useEffect(() => {
         setVideoVisible(state.currentTrack?.type === "video");
     }, [state.currentTrack?.type]);
+
+    // Ref so the playErrorSound handler can read current playing state without
+    // needing to be in the dependency array (avoids re-registering on every tick)
+    const playingRef = useRef(state.playing);
+    useEffect(() => { playingRef.current = state.playing; }, [state.playing]);
+    const togglePlayRef = useRef(togglePlay);
+    useEffect(() => { togglePlayRef.current = togglePlay; }, [togglePlay]);
 
     // Handle messages from the extension host
     useEffect(() => {
@@ -96,10 +117,66 @@ export const App: React.FC = () => {
                         defaultVolume: msg.defaultVolume ?? 80,
                         defaultSpeed: msg.defaultSpeed ?? 1,
                     });
+                    if (msg.customSoundName !== undefined) {
+                        setCustomSoundName(msg.customSoundName || undefined);
+                    }
+                    if (msg.errorSoundCooldown !== undefined) {
+                        setSettings((prev) => ({ ...prev, errorSoundCooldown: msg.errorSoundCooldown! }));
+                    }
+                    if (msg.errorSoundDeduplication !== undefined) {
+                        setSettings((prev) => ({ ...prev, errorSoundDeduplication: msg.errorSoundDeduplication! }));
+                    }
                     break;
                 case "openSettings":
                     setSettingsOpen(true);
                     break;
+                case "syncErrorSound":
+                    if (typeof msg.errorSoundEnabled === "boolean") {
+                        setSettings((prev) => ({ ...prev, errorSoundEnabled: msg.errorSoundEnabled! }));
+                    }
+                    break;
+
+                case "errorSoundFileSet":
+                    // Custom sound was picked (or cleared) by the file dialog
+                    setCustomSoundName(msg.name || undefined);
+                    break;
+
+                case "playErrorSound": {
+                    // Play the error sound through the dedicated hidden <audio> element.
+                    // Pause the main player first; resume it when the sound ends.
+                    const el = errorAudioRef.current;
+                    if (!el || !msg.soundUrl) break;
+
+                    const wasPlaying = msg.wasPlaying ?? false;
+
+                    // Pause main player if it was playing
+                    if (wasPlaying && playingRef.current) {
+                        togglePlayRef.current();
+                    }
+
+                    el.src = msg.soundUrl;
+                    el.volume = Math.max(0, Math.min(100, msg.volume ?? 80)) / 100;
+
+                    el.onended = () => {
+                        el.onended = null;
+                        el.onerror = null;
+                        // Resume main player only if we paused it
+                        if (wasPlaying && !playingRef.current) {
+                            togglePlayRef.current();
+                        }
+                    };
+                    el.onerror = () => {
+                        el.onended = null;
+                        el.onerror = null;
+                        if (wasPlaying && !playingRef.current) {
+                            togglePlayRef.current();
+                        }
+                    };
+
+                    el.load();
+                    el.play().catch(() => { });
+                    break;
+                }
             }
         };
         window.addEventListener("message", handler);
@@ -117,20 +194,18 @@ export const App: React.FC = () => {
         return () => window.removeEventListener("player:addFiles", handler);
     }, [addFiles]);
 
-    // Ask the extension host to open the file dialog
     const handleOpenFile = useCallback(() => {
         postToExtension({ type: "openFile" });
     }, []);
 
-    const isAudio = state.currentTrack?.type !== "video";
-
     return (
         <div className={`app ${!settings.enableShadows ? "app--no-shadows" : ""}`}>
-            {/* Hidden audio element — always mounted so ref is stable */}
+            {/* Hidden audio element for the main player */}
             <audio ref={audioRef} style={{ display: "none" }} />
+            {/* Hidden audio element dedicated to the error sound */}
+            <audio ref={errorAudioRef} style={{ display: "none" }} />
 
             <div className="app__main">
-                {/* Left panel: track info + visualizer + controls */}
                 <div className="app__panel app__panel--left">
                     <video
                         ref={videoRef}
@@ -143,7 +218,6 @@ export const App: React.FC = () => {
                             enableShadows={settings.enableShadows}
                             artworkShape={settings.artworkShape}
                         />
-
 
                         <Controls
                             playing={state.playing}
@@ -165,7 +239,6 @@ export const App: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Right panel: playlist */}
                 <div className="app__panel app__panel--right">
                     <Playlist
                         tracks={state.playlist}
@@ -186,6 +259,7 @@ export const App: React.FC = () => {
                 isOpen={settingsOpen}
                 onClose={() => setSettingsOpen(false)}
                 settings={settings}
+                customSoundName={customSoundName}
                 onUpdateSettings={(newSettings) => {
                     setSettings(newSettings);
                     const api = getVsCodeApi();
@@ -193,7 +267,11 @@ export const App: React.FC = () => {
                         const currentState = api.getState() as any || {};
                         api.setState({ ...currentState, settings: newSettings });
                     }
+                    postToExtension({ type: "updateErrorSound", enabled: newSettings.errorSoundEnabled, cooldown: newSettings.errorSoundCooldown, deduplication: newSettings.errorSoundDeduplication });
                 }}
+                onBrowseErrorSound={() => postToExtension({ type: "openErrorSoundFile" })}
+                onClearErrorSound={() => postToExtension({ type: "clearErrorSoundFile" })}
+                onTestErrorSound={() => postToExtension({ type: "testErrorSound" })}
             />
         </div>
     );

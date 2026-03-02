@@ -46,6 +46,14 @@ Available on the **Open VSX Registry** — compatible with VS Code, VSCodium, Cu
 - **Shuffle Mode** - Randomize playback order
 - **Repeat Modes** - Off, Repeat All, Repeat One
 
+### Error Sound 🔊
+- **Automatic Error Detection** - Plays a "Faaaaaah" sound when you open a file with diagnostic errors
+- **Configurable Cooldown** - Set how long to wait between sounds (5s, 10s, 30s, 1min, 5min, or never)
+- **Custom Sound Support** - Replace the default sound with your own audio file
+- **Per-File Deduplication** - Sound plays only once per file (until you close and reopen it)
+- **Quick Toggle** - Enable/disable from the Settings modal
+- **Volume Control** - Separate volume setting for error sounds
+
 ### Keyboard Shortcuts
 | Key | Action |
 |-----|--------|
@@ -162,6 +170,21 @@ Plyr can be configured through VS Code's settings. Navigate to **Settings** → 
 | `mediaPlayer.defaultVolume` | Number (0-100) | `80` | Default playback volume when opening files |
 | `mediaPlayer.autoplay` | Boolean | `false` | Automatically play media when opened |
 | `mediaPlayer.defaultSpeed` | Number | `1` | Default playback speed (0.5, 0.75, 1, 1.25, 1.5, 1.75, or 2) |
+| `mediaPlayer.errorSound.enabled` | Boolean | `true` | Play "Faaaaaah" sound when opening files with errors |
+| `mediaPlayer.errorSound.cooldownMs` | Number | `5000` | Cooldown between error sounds (ms) — overridden by Settings UI |
+| `mediaPlayer.errorSound.volume` | Number (0-100) | `80` | Volume of the error sound effect |
+
+### Settings Modal
+
+Click the gear icon in the sidebar header to access the Settings modal with visual controls for:
+- **Enable Shadows** - Toggle shadow effects on album art (default: off)
+- **Artwork Shape** - Choose between square or circular disc style
+- **Error Sound** section:
+  - **Play on errors** toggle
+  - **Per-file deduplication** - Sound plays only once per file until closed (default: on)
+  - **Cooldown** presets (5s, 10s, 30s, 1m, 5m, Never)
+  - **Custom Sound** file picker
+  - **Test** button to preview the sound
 
 ### Example Configuration
 
@@ -182,6 +205,7 @@ Plyr can be configured through VS Code's settings. Navigate to **Settings** → 
 | `player.togglePlay` | Toggle Play/Pause | Toggles playback of the current media |
 | `player.next` | Next Track | Skips to the next track in the playlist |
 | `player.prev` | Previous Track | Goes to the previous track |
+| `player.openSettings` | Settings | Opens the settings modal |
 
 ### Keybindings
 
@@ -226,6 +250,7 @@ Plyr is built as a VS Code extension with a dual-process architecture:
 - **`extension.ts`** - Entry point, registers commands, status bar, and view providers
 - **`MediaPlayerViewProvider.ts`** - Sidebar webview provider (primary UI)
 - **`MediaPlayerPanel.ts`** - Optional full-panel webview for wider view
+- **`ErrorSoundManager.ts`** - Monitors file diagnostics and triggers error sound
 - **`utils.ts`** - Media metadata parsing using `music-metadata` library
 
 ### Webview Frontend (React)

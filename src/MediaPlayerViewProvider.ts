@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as os from "os";
 import { parseMediaMetadata } from "./utils";
+import { ErrorSoundManager } from "./ErrorSoundManager";
 
 export interface PlayerStatus {
     playing: boolean;
@@ -24,14 +25,39 @@ export class MediaPlayerViewProvider implements vscode.WebviewViewProvider {
 
     private _view?: vscode.WebviewView;
     private readonly _context: vscode.ExtensionContext;
+    private _errorSoundManager?: ErrorSoundManager;
 
-    constructor(context: vscode.ExtensionContext) {
+    constructor(context: vscode.ExtensionContext, errorSoundManager?: ErrorSoundManager) {
         this._context = context;
+        this._errorSoundManager = errorSoundManager;
         MediaPlayerViewProvider.current = this;
     }
 
     public static onStatusUpdate(cb: StatusCallback): void {
         MediaPlayerViewProvider.statusCallbacks.push(cb);
+    }
+
+    /**
+     * Called by ErrorSoundManager — resolves the correct sound URI and
+     * sends a playErrorSound message to the sidebar webview.
+     * No new tabs or panels are created.
+     */
+    public triggerErrorSound(): void {
+        if (!this._view) return;
+
+        const wasPlaying = this._context.globalState.get<boolean>("player.playing", false);
+
+        // Resolve the sound URI: custom file takes priority over the default
+        const customPath = this._context.globalState.get<string>("player.errorSoundPath");
+        const soundUri = customPath
+            ? vscode.Uri.file(customPath)
+            : vscode.Uri.joinPath(this._context.extensionUri, "media", "faaah.mp3");
+
+        const soundUrl = this._view.webview.asWebviewUri(soundUri).toString();
+        const cfg = vscode.workspace.getConfiguration("mediaPlayer");
+        const volume = cfg.get<number>("errorSound.volume", 80);
+
+        this._view.webview.postMessage({ type: "playErrorSound", soundUrl, volume, wasPlaying });
     }
 
     public resolveWebviewView(
@@ -46,6 +72,7 @@ export class MediaPlayerViewProvider implements vscode.WebviewViewProvider {
             localResourceRoots: [
                 vscode.Uri.joinPath(this._context.extensionUri, "out", "webview"),
                 vscode.Uri.joinPath(this._context.extensionUri, "resources"),
+                vscode.Uri.joinPath(this._context.extensionUri, "media"),
                 vscode.Uri.file(os.homedir()),
                 vscode.Uri.file("/Volumes"),
             ],
@@ -59,7 +86,6 @@ export class MediaPlayerViewProvider implements vscode.WebviewViewProvider {
             async (message: { type: string;[key: string]: unknown }) => {
                 switch (message.type) {
                     case "statusUpdate":
-                        // Forward to extension-level handler (status bar, etc.)
                         this._context.globalState.update("player.playing", message.playing);
                         MediaPlayerViewProvider.statusCallbacks.forEach((cb) =>
                             cb({
@@ -71,11 +97,21 @@ export class MediaPlayerViewProvider implements vscode.WebviewViewProvider {
 
                     case "requestConfig": {
                         const config = vscode.workspace.getConfiguration("mediaPlayer");
+                        const customPath = this._context.globalState.get<string>("player.errorSoundPath");
+                        const cooldown = this._context.globalState.get<number>("player.errorSoundCooldown", 5000);
+                        const deduplication = this._context.globalState.get<boolean>("player.errorSoundDeduplication", true);
+                        // Send current custom sound filename (if any) along with config
+                        const customSoundName = customPath
+                            ? customPath.split(/[\\/]/).pop() ?? customPath
+                            : undefined;
                         webviewView.webview.postMessage({
                             type: "config",
                             defaultVolume: config.get<number>("defaultVolume", 80),
                             autoplay: config.get<boolean>("autoplay", false),
                             defaultSpeed: config.get<number>("defaultSpeed", 1),
+                            customSoundName,
+                            errorSoundCooldown: cooldown,
+                            errorSoundDeduplication: deduplication,
                         });
                         break;
                     }
@@ -96,12 +132,65 @@ export class MediaPlayerViewProvider implements vscode.WebviewViewProvider {
                         const files = await Promise.all(
                             uris.map(async (uri) => {
                                 const url = webviewView.webview.asWebviewUri(uri).toString();
-                                const name = uri.fsPath.split(/[\\/]/).pop() ?? uri.fsPath;
+                                const name = uri.fsPath.split(/[/\\]/).pop() ?? uri.fsPath;
                                 const metadata = await parseMediaMetadata(uri.fsPath);
                                 return { url, name, ...metadata };
                             })
                         );
                         webviewView.webview.postMessage({ type: "addFiles", files });
+                        break;
+                    }
+
+                    case "openErrorSoundFile": {
+                        // User tapped "Browse…" in Settings to pick a custom error sound
+                        const uris = await vscode.window.showOpenDialog({
+                            canSelectMany: false,
+                            filters: { "Audio Files": ["mp3", "wav", "ogg", "aac", "m4a", "flac"] },
+                            openLabel: "Use as Error Sound",
+                        });
+                        if (!uris || uris.length === 0) break;
+
+                        const uri = uris[0];
+                        const fsPath = uri.fsPath;
+                        await this._context.globalState.update("player.errorSoundPath", fsPath);
+
+                        const soundUrl = webviewView.webview.asWebviewUri(uri).toString();
+                        const name = fsPath.split(/[/\\]/).pop() ?? fsPath;
+                        webviewView.webview.postMessage({
+                            type: "errorSoundFileSet",
+                            name,
+                            soundUrl,
+                        });
+                        break;
+                    }
+
+                    case "clearErrorSoundFile": {
+                        await this._context.globalState.update("player.errorSoundPath", undefined);
+                        webviewView.webview.postMessage({ type: "errorSoundFileSet", name: undefined, soundUrl: undefined });
+                        break;
+                    }
+
+                    case "testErrorSound": {
+                        // User tapped "Test 🔊" in Settings — trigger immediately
+                        this.triggerErrorSound();
+                        break;
+                    }
+
+                    case "updateErrorSound": {
+                        const enabled = message.enabled as boolean | undefined;
+                        const cooldown = message.cooldown as number | undefined;
+                        const deduplication = message.deduplication as boolean | undefined;
+                        if (typeof enabled === "boolean" && this._errorSoundManager) {
+                            this._errorSoundManager.setEnabled(enabled);
+                        }
+                        if (typeof cooldown === "number" && this._errorSoundManager) {
+                            await this._context.globalState.update("player.errorSoundCooldown", cooldown);
+                            this._errorSoundManager.setCooldown(cooldown);
+                        }
+                        if (typeof deduplication === "boolean" && this._errorSoundManager) {
+                            await this._context.globalState.update("player.errorSoundDeduplication", deduplication);
+                            this._errorSoundManager.setDeduplication(deduplication);
+                        }
                         break;
                     }
                 }

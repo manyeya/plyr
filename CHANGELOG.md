@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2025-03-02
+
+### Added
+- **Error Sound Feature 🔊**: Plays a "Faaaaaah" sound when you open a file containing diagnostic errors
+  - Automatic error detection via `vscode.languages.getDiagnostics()`
+  - Configurable cooldown (5s, 10s, 30s, 1m, 5m, or Never) via Settings UI
+  - **Per-file deduplication toggle** — Sound plays only once per file until closed (can be disabled)
+  - Custom sound file support — replace the default with your own audio
+  - Volume control for error sounds (0-100)
+  - Test button in Settings to preview the sound
+- **New Settings Modal Controls**: Cooldown presets for error sound with visual buttons
+
+### Changed
+- **Shadows are now OFF by default** — for a cleaner, more minimal appearance
+- Error sound cooldown now persisted to `globalState` instead of reading from VS Code config
+- Settings UI now shows current cooldown value with formatted labels (e.g., "Wait 5s between sounds")
+- Improved settings state management with cooldown and deduplication persistence
+
+### Technical
+- Added `ErrorSoundManager.ts` — monitors file diagnostics and manages error sound playback
+- Added `setCooldown()` and `setDeduplication()` methods for runtime setting updates
+- Cooldown of 0 means "no limit" — sound plays every time (subject to per-file deduplication)
+- Per-file deduplication can be disabled to allow sounds to play repeatedly for the same file
+
 ## [0.2.0] - 2026-02-25
 
 ### Added

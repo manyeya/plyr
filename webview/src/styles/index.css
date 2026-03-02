@@ -1503,6 +1503,35 @@ body.vscode-high-contrast .playlist {
   font-weight: 500;
 }
 
+/* Cooldown Presets */
+.settings-cooldown-presets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.settings-cooldown-btn {
+  padding: 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.settings-cooldown-btn:hover {
+  background: var(--surface-hover);
+}
+
+.settings-cooldown-btn--active {
+  background: var(--selection-bg);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* Narrow sidebar adjustments (≤400px) */
 @media (max-width: 400px) {
   .settings-overlay {
@@ -1580,6 +1609,15 @@ body.vscode-high-contrast .playlist {
   .settings-shape-btn span {
     font-size: 10px;
   }
+
+  .settings-cooldown-presets {
+    gap: 4px;
+  }
+
+  .settings-cooldown-btn {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
 }
 
 /* Ultra narrow sidebar (≤250px) */
@@ -1639,7 +1677,70 @@ body.vscode-high-contrast .playlist {
   }
 
   .settings-shape-btn,
+  .settings-cooldown-btn,
   .settings-modal__close {
     transition: none;
   }
+}
+
+/* ─── Error Sound settings extras ─────────────────────────── */
+.settings-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+/* Column layout for items that need a second line of controls */
+.settings-item--column {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.settings-sound-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.settings-action-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.settings-action-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+}
+
+.settings-action-btn--accent {
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+  border-color: transparent;
+  color: #fff;
+}
+
+.settings-action-btn--accent:hover {
+  opacity: 0.9;
+  border-color: transparent;
+}
+
+.settings-action-btn--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.settings-action-btn--danger:hover {
+  background: rgba(248, 113, 113, 0.12);
 }
